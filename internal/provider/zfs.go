@@ -16,6 +16,7 @@ type Dataset struct {
 	referenced string
 	mounted    string
 	mountpoint string
+	properties map[string]string
 }
 
 func updateOption(config *Config, datasetName string, option string, value string) (string, error) {
@@ -68,6 +69,7 @@ func describeDataset(config *Config, datasetName string) (*Dataset, error) {
 	reader.Comma = '\t'
 
 	dataset := Dataset{}
+	dataset.properties = make(map[string]string)
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -92,7 +94,9 @@ func describeDataset(config *Config, datasetName string) (*Dataset, error) {
 		case "guid":
 			dataset.guid = line[2]
 		default:
-			// do nothing
+			if line[3] == "local" {
+				dataset.properties[line[1]] = line[2]
+			}
 		}
 	}
 

@@ -5,4 +5,7 @@ resource "zfs_dataset" "homedir" {
     uid  = 2519
     gid  = 2519
   }
+  properties = {
+    compression = "zstd-fast"
+  }
 }

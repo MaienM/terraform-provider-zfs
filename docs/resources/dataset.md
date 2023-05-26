@@ -20,6 +20,9 @@ resource "zfs_dataset" "homedir" {
     uid  = 2519
     gid  = 2519
   }
+  properties = {
+    compression = "zstd-fast"
+  }
 }
 ```
 
@@ -36,6 +39,7 @@ resource "zfs_dataset" "homedir" {
 - `group` (String) Set group of the mountpoint. Must be a valid group name
 - `mountpoint` (String) Mountpoint of the dataset.
 - `owner` (String) Set owner of the mountpoint. Must be a valid username
+- `properties` (Map of String) Properties of the dataset.
 - `uid` (Number) Set owner of the mountpoint. Must be a valid uid
 
 ### Read-Only

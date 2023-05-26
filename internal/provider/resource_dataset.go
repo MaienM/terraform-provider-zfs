@@ -64,6 +64,15 @@ func resourceDataset() *schema.Resource {
 				ConflictsWith: []string{"group"},
 				RequiredWith:  []string{"mountpoint"},
 			},
+			"properties": {
+				Description: "Properties of the dataset.",
+				Optional:    true,
+				Default:     map[string]string{},
+				Type:        schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -111,6 +120,16 @@ func resourceDatasetCreate(ctx context.Context, d *schema.ResourceData, meta int
 	// is not properly configured!
 	log.Printf("[DEBUG] committing guid: %s", dataset.guid)
 	d.SetId(dataset.guid)
+
+	args := ""
+	for name, value := range d.Get("properties").(map[string]interface{}) {
+		args += fmt.Sprintf("%s='%s' ", name, value.(string))
+	}
+	if args != "" {
+		if _, err = callSshCommand(config, "zfs set %s %s", args, datasetName); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 
 	if mountpoint != "none" && mountpoint != "legacy" {
 		if uid, ok := d.GetOk("uid"); ok {
@@ -163,6 +182,10 @@ func resourceDatasetRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	dataset, err := describeDataset(config, datasetName)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err = d.Set("properties", dataset.properties); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -235,6 +258,37 @@ func resourceDatasetUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	if datasetName != *old_name {
 		if err := renameDataset(config, *old_name, datasetName); err != nil {
 			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("properties") {
+		oldValueRaw, newValueRaw := d.GetChange("properties")
+		oldValue := oldValueRaw.(map[string]interface{})
+		newValue := newValueRaw.(map[string]interface{})
+
+		args := ""
+		for name, value := range newValue {
+			old, _ := oldValue[name]
+			if value != old {
+				args += fmt.Sprintf("%s='%s' ", name, value.(string))
+			}
+		}
+		if args != "" {
+			if _, err = callSshCommand(config, "zfs set %s %s", args, datasetName); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		args = ""
+		for name := range oldValue {
+			if _, ok := newValue[name]; !ok {
+				args += name + " "
+			}
+		}
+		if args != "" {
+			if _, err = callSshCommand(config, "zfs inherit %s %s", args, datasetName); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
