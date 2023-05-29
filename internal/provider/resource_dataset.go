@@ -66,6 +66,14 @@ func resourceDataset() *schema.Resource {
 			},
 			"properties": {
 				Description: "Properties of the dataset.",
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"local_properties": {
+				Description: "Local properties of the dataset.",
 				Optional:    true,
 				Default:     map[string]string{},
 				Type:        schema.TypeMap,
@@ -122,7 +130,7 @@ func resourceDatasetCreate(ctx context.Context, d *schema.ResourceData, meta int
 	d.SetId(dataset.guid)
 
 	args := ""
-	for name, value := range d.Get("properties").(map[string]interface{}) {
+	for name, value := range d.Get("local_properties").(map[string]interface{}) {
 		args += fmt.Sprintf("%s='%s' ", name, value.(string))
 	}
 	if args != "" {
@@ -186,6 +194,9 @@ func resourceDatasetRead(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	if err = d.Set("properties", dataset.properties); err != nil {
+		return diag.FromErr(err)
+	}
+	if err = d.Set("local_properties", dataset.local_properties); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -261,8 +272,8 @@ func resourceDatasetUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		}
 	}
 
-	if d.HasChange("properties") {
-		oldValueRaw, newValueRaw := d.GetChange("properties")
+	if d.HasChange("local_properties") {
+		oldValueRaw, newValueRaw := d.GetChange("local_properties")
 		oldValue := oldValueRaw.(map[string]interface{})
 		newValue := newValueRaw.(map[string]interface{})
 
