@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 
-	"github.com/MathiasPius/terraform-provider-zfs/internal/provider"
+	"github.com/MaienM/terraform-provider-zfs/internal/provider"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 

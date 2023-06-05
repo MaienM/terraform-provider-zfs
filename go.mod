@@ -1,4 +1,4 @@
-module github.com/MathiasPius/terraform-provider-zfs
+module github.com/MaienM/terraform-provider-zfs
 
 go 1.18
 
